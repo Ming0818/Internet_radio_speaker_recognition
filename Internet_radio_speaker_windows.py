@@ -47,16 +47,33 @@ def read_radio_stream(url_):
         if dec is None:
             dec = acodec.Decoder(dm.streams[0])
 
-        play_frames(frames, dec, snd_out)
+        #start = time.clock()
+        frames_list = decode_frames(frames, dec)
+        #elapsed = (time.clock() - start)
+        #print "Decode - ", elapsed
 
-        sound_np_array = ansic_to_numpy(frames, dec)
+        start = time.clock()
+        play_decoded_frames(frames_list, snd_out)
+        elapsed = (time.clock() - start)
+        print "Send to play play - ", elapsed
 
+        #start = time.clock()
+        sound_np_array = ansic_to_numpy(frames_list)
+        #elapsed = (time.clock() - start)
+        #print "To ndarray - ", elapsed
+
+        #start = time.clock()
         sound_np_array = decimate(sound_np_array, 4)
+        #elapsed = (time.clock() - start)
+        #print "Decimate - ", elapsed
 
+        #start = time.clock()
         mfcc_features = MFCC.extract(sound_np_array) #1.5s
         mfcc_features = mfcc_features[:, 1:]
+        #elapsed = (time.clock() - start)
+        #print "MFCC - ", elapsed
 
-        print mfcc_features.shape
+        #print mfcc_features.shape
 
         g = mixture.GMM(n_components=32)
         log_prob = -10000
@@ -64,6 +81,7 @@ def read_radio_stream(url_):
 
         for key, values in database.iteritems():
             try:
+                #start = time.clock()
                 g.means_ = values[0, :, :]
                 g.covars_ = values[1, :, :]
                 g.weights_ = values[2, :, 1]
@@ -71,6 +89,8 @@ def read_radio_stream(url_):
                 if temp_prob > log_prob:
                     log_prob = temp_prob
                     winner = key
+                #elapsed = (time.clock() - start)
+                #print "Log-likelihood - ", elapsed
             except TypeError:
                 print 'error for ', key
 
@@ -79,11 +99,32 @@ def read_radio_stream(url_):
     print('\n###################')
 
 
-def play_frames(frames_, dec_, snd_out_):
+def decode_frames(frames_, dec_):
+    frames_list_ = []
     for fr in frames_:
         r = dec_.decode(fr[1])
-        if r and r.data:
-            snd_out_.play(r.data)
+        frames_list_.append(r.data)
+    return frames_list_
+
+
+def play_decoded_frames(frames_, snd_out_):
+    for fr in frames_:
+        snd_out_.play(fr)
+    #snd_out_.play(frames_)
+
+
+def ansic_to_numpy(frames_):
+    scale_fun = lambda x: x / 1.0 if x < 32768 else (x - 65536) / 1.0  # uint16 to int16
+    sound_np_array_ = np.array([])
+
+    for fr in frames_:
+        hex_values_str = fr.__str__()
+        hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
+        pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
+                                range(3, len(hex_audio_mono), 2)]  #little endian
+        pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
+        sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
+    return sound_np_array_
 
 
 def decimate(np_array, factor):
@@ -100,25 +141,6 @@ def calc_rms(np_array):
 def plot_audio_data(np_array):
     plt.plot(np_array)
     plt.show()
-
-
-def ansic_to_numpy(frames_, dec_):
-    scale_fun = lambda x: x / 1.0 if x < 32768 else (x - 65536) / 1.0  # uint16 to int16
-    sound_np_array_ = np.array([])
-
-    for fr in frames_:
-        r = dec_.decode(fr[1])
-        if r and r.data:
-            # snd_out.play(r.data)
-            raw_ansic_python_obj = ctypes.py_object(r.data)
-            ACstr_raw_C_data = raw_ansic_python_obj.value
-            hex_values_str = ACstr_raw_C_data.__str__()
-            hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
-            pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
-                                range(3, len(hex_audio_mono), 2)]  #little endian
-            pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
-            sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
-    return sound_np_array_
 
 
 if __name__ == "__main__":

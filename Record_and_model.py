@@ -47,11 +47,13 @@ def read_radio_stream(url_):
             # Open decoder
             dec = acodec.Decoder(dm.streams[0])
 
-        play_frames(frames, dec, snd_out)
+        frames_list = decode_frames(frames, dec)
 
-        sound_np_array = ansic_to_numpy(frames, dec)
+        play_decoded_frames(frames_list, snd_out)
 
-        sound_np_array = decimate(sound_np_array, 2)
+        sound_np_array = ansic_to_numpy(frames_list)
+
+        sound_np_array = decimate(sound_np_array, 4)
         an_array = np.append(an_array, np.transpose(sound_np_array))
 
         end = time.time()
@@ -60,11 +62,17 @@ def read_radio_stream(url_):
     return an_array
 
 
-def play_frames(frames_, dec_, snd_out_):
+def decode_frames(frames_, dec_):
+    frames_list_ = []
     for fr in frames_:
         r = dec_.decode(fr[1])
-        if r and r.data:
-            snd_out_.play(r.data)
+        frames_list_.append(r.data)
+    return frames_list_
+
+
+def play_decoded_frames(frames_, snd_out_):
+    for fr in frames_:
+        snd_out_.play(fr)
 
 
 def decimate(np_array, factor):
@@ -83,22 +91,17 @@ def plot_audio_data(np_array):
     plt.show()
 
 
-def ansic_to_numpy(frames_, dec_):
+def ansic_to_numpy(frames_):
     scale_fun = lambda x: x / 1.0 if x < 32768 else (x - 65536) / 1.0  # uint16 to int16
     sound_np_array_ = np.array([])
 
     for fr in frames_:
-        r = dec_.decode(fr[1])
-        if r and r.data:
-            raw_ansic_python_obj = ctypes.py_object(r.data)
-            ACstr_raw_C_data = raw_ansic_python_obj.value
-            hex_values_str = ACstr_raw_C_data.__str__()
-            hex_audio_mono1 = hex_values_str[0:-1:2]
-            hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
-            pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
-                                range(3, len(hex_audio_mono), 2)]  # little endian
-            pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
-            sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
+        hex_values_str = fr.__str__()
+        hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
+        pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
+                                range(3, len(hex_audio_mono), 2)]  #little endian
+        pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
+        sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
     return sound_np_array_
 
 
@@ -110,7 +113,7 @@ def add_to_database(url_, person_name_):
     print "Recording and processing...\n\n"
     full_sound_model = read_radio_stream(url_)
 
-    wav.write('People\\'+person_name_+'.wav', 22050, full_sound_model/32767.0)
+    wav.write('People\\'+person_name_+'.wav', 11025, full_sound_model/32767.0)
 
     print "Calculating MFCC and saving the model..."
     mfcc_features = MFCC.extract(full_sound_model)
@@ -125,12 +128,12 @@ def add_to_database(url_, person_name_):
     print len(g.means_)
 
     gmm_models[person_name_] = model
-    sio.savemat('mfcc.mat', gmm_models, oned_as='row')
+    sio.savemat('mfcc_32.mat', gmm_models, oned_as='row')
 
 
 if __name__ == "__main__":
     url = 'http://poznan5-4.radio.pionier.net.pl:8000/tuba10-1.mp3'
-    person_name = 'Person_1'
+    person_name = 'Person_2'
 
     add_to_database(url, person_name)
 
