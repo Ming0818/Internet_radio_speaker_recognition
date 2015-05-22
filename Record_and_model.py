@@ -1,8 +1,6 @@
 __author__ = 'Radek W'
 
 
-__author__ = 'Radek W'
-
 import urllib
 import ctypes
 import binascii
@@ -96,14 +94,12 @@ def ansic_to_numpy(frames_):
     sound_np_array_ = np.array([])
 
     for fr in frames_:
-<<<<<<< HEAD
         hex_values_str = fr.__str__()
         hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
         pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
                                 range(3, len(hex_audio_mono), 2)]  #little endian
         pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
         sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
-=======
         r = dec_.decode(fr[1])
         if r and r.data:
             # raw_ansic_python_obj = ctypes.py_object(r.data)
@@ -116,7 +112,6 @@ def ansic_to_numpy(frames_):
                                 range(3, len(hex_audio_mono), 2)]  # little endian
             pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
             sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
->>>>>>> origin/master
     return sound_np_array_
 
 
