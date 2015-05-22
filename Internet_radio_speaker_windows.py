@@ -143,6 +143,29 @@ def plot_audio_data(np_array):
     plt.show()
 
 
+<<<<<<< HEAD
+=======
+def ansic_to_numpy(frames_, dec_):
+    scale_fun = lambda x: x / 1.0 if x < 32768 else (x - 65536) / 1.0  # uint16 to int16
+    sound_np_array_ = np.array([])
+
+    for fr in frames_:
+        r = dec_.decode(fr[1])
+        if r and r.data:
+            # snd_out.play(r.data)
+            # raw_ansic_python_obj = ctypes.py_object(r.data)
+            # ACstr_raw_C_data = raw_ansic_python_obj.value
+            # hex_values_str = ACstr_raw_C_data.__str__()
+            hex_values_str = r.data.__str__()
+            hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
+            pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
+                                range(3, len(hex_audio_mono), 2)]  #little endian
+            pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
+            sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
+    return sound_np_array_
+
+
+>>>>>>> origin/master
 if __name__ == "__main__":
     url = 'http://poznan5-4.radio.pionier.net.pl:8000/tuba10-1.mp3'
     read_radio_stream(url)
