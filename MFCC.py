@@ -65,10 +65,10 @@ def dctmtx(n):
     D[0] /= sqrt(2)
     return D
 
-FS = 11025                              # Sampling rate
+FS = 22050                              # Sampling rate
 FRAME_LEN = int(0.025 * FS)              # Frame length
 FRAME_SHIFT = int(0.0125 * FS)            # Frame shift
-FFT_SIZE = 2048                         # How many points for FFT
+FFT_SIZE = 256                         # How many points for FFT
 WINDOW = hamming(FRAME_LEN)             # Window function
 PRE_EMPH = 0.95                         # Pre-emphasis factor
 

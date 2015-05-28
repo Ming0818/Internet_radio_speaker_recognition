@@ -20,7 +20,7 @@ import MFCC
 
 def read_radio_stream(url_):
 
-    database = sio.loadmat('mfcc_32.mat')
+    database = sio.loadmat('mfcc_16_fft256_GMM.mat')
     database.pop('__header__')
     database.pop('__version__')
     database.pop('__globals__')
@@ -52,10 +52,10 @@ def read_radio_stream(url_):
         #elapsed = (time.clock() - start)
         #print "Decode - ", elapsed
 
-        start = time.clock()
+        #start = time.clock()
         play_decoded_frames(frames_list, snd_out)
-        elapsed = (time.clock() - start)
-        print "Send to play play - ", elapsed
+        #elapsed = (time.clock() - start)
+        #print "Send to play play - ", elapsed
 
         #start = time.clock()
         sound_np_array = ansic_to_numpy(frames_list)
@@ -63,7 +63,7 @@ def read_radio_stream(url_):
         #print "To ndarray - ", elapsed
 
         #start = time.clock()
-        sound_np_array = decimate(sound_np_array, 4)
+        sound_np_array = decimate(sound_np_array, 2)
         #elapsed = (time.clock() - start)
         #print "Decimate - ", elapsed
 
@@ -75,7 +75,7 @@ def read_radio_stream(url_):
 
         #print mfcc_features.shape
 
-        g = mixture.GMM(n_components=32)
+        g = mixture.GMM(n_components=16)
         log_prob = -10000
         winner = 'nobody'
 
@@ -128,7 +128,7 @@ def ansic_to_numpy(frames_):
 
 
 def decimate(np_array, factor):
-    np_array = np_array[0:(np_array.shape[0] / 4) * 4]
+    np_array = np_array[0:(np_array.shape[0] / factor) * factor]
     np_array = np_array.reshape(-1, factor)
     np_array = np_array.reshape(-1, factor).mean(axis=1)
     return np_array
@@ -142,25 +142,6 @@ def plot_audio_data(np_array):
     plt.plot(np_array)
     plt.show()
 
-	
-def ansic_to_numpy(frames_, dec_):
-    scale_fun = lambda x: x / 1.0 if x < 32768 else (x - 65536) / 1.0  # uint16 to int16
-    sound_np_array_ = np.array([])
-
-    for fr in frames_:
-        r = dec_.decode(fr[1])
-        if r and r.data:
-            # snd_out.play(r.data)
-            # raw_ansic_python_obj = ctypes.py_object(r.data)
-            # ACstr_raw_C_data = raw_ansic_python_obj.value
-            # hex_values_str = ACstr_raw_C_data.__str__()
-            hex_values_str = r.data.__str__()
-            hex_audio_mono = ''.join([hex_values_str[i:i + 2] for i in range(0, len(hex_values_str), 4)])
-            pcm_audio_uint16 = [int(binascii.b2a_hex(hex_audio_mono[i:i - 2:-1]), 16) for i in
-                                range(3, len(hex_audio_mono), 2)]  #little endian
-            pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
-            sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
-    return sound_np_array_
 
 
 if __name__ == "__main__":

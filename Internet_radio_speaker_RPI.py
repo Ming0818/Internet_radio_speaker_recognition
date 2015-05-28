@@ -27,7 +27,7 @@ import MFCC
 
 def read_radio_stream(url_):
 
-    database = sio.loadmat('mfcc_32.mat')
+    database = sio.loadmat('mfcc_16_fft256_GMM.mat')
     database.pop('__header__')
     database.pop('__version__')
     database.pop('__globals__')
@@ -87,7 +87,7 @@ def read_radio_stream(url_):
         #print 'mfcc - %2.8f' %elapsed
 
 
-        g = mixture.GMM(n_components=32)
+        g = mixture.GMM(n_components=16)
         log_prob = -10000
         winner = 'nobody'
 
@@ -114,7 +114,7 @@ def read_radio_stream(url_):
 
 
 def decimate(np_array, factor):
-    np_array = np_array[0:(np_array.shape[0] / 4) * 4]
+    np_array = np_array[0:(np_array.shape[0] / factor) * factor]
     np_array = np_array.reshape(-1, factor)
     np_array = np_array.reshape(-1, factor).mean(axis=1)
     return np_array
