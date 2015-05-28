@@ -18,7 +18,7 @@
 from math import *
 from numpy import *
 from numpy.linalg import *
-from matplotlib.pyplot import *
+#from matplotlib.pyplot import *
 
 def hamming(n):
     """
@@ -56,6 +56,20 @@ def melfb(p, n, fs):
         M[r,c+1] += 2 * pm[c]
     return M, CF
 
+	
+def norm_mel_filters(filters):
+    i = 0
+    for row in filters:
+        en = sum(row ** 2)
+        while en > 1.01:
+            row *= 0.99
+            en = sum(row ** 2)
+        #print(str(en))
+        filters[i, :] = row
+        i += 1
+    return filters
+	
+
 def dctmtx(n):
     """
     Return the DCT-II matrix of order n as a numpy array.
@@ -76,6 +90,7 @@ BANDS = 40                              # Number of Mel filters
 COEFS = 13                              # Number of Mel cepstra coefficients to keep
 POWER_SPECTRUM_FLOOR = 1e-100           # Flooring for the power to avoid log(0)
 M, CF = melfb(BANDS, FFT_SIZE, FS)      # The Mel filterbank matrix and the center frequencies of each band
+M = norm_mel_filters(M)
 D = dctmtx(BANDS)[1:COEFS+1]            # The DCT matrix. Change the index to [0:COEFS] if you want to keep the 0-th coefficient
 invD = inv(dctmtx(BANDS))[:,1:COEFS+1]  # The inverse DCT matrix. Change the index to [0:COEFS] if you want to keep the 0-th coefficient
 
@@ -100,36 +115,12 @@ def extract(x, show = False):
         X = dot(D, log(dot(M,X)))
         feature.append(X)
     feature = row_stack(feature)
-    # Show the MFCC spectrum before normalization
-    if show:
-        figure().show()
-        subplot(2,1,2)
-        show_MFCC_spectrum(feature)
     # Mean & variance normalization
     if feature.shape[0] > 1:
         mu = mean(feature, axis=0)
         sigma = std(feature, axis=0)
         feature = (feature - mu) / sigma
-    # Show the MFCC
-    subplot(2,1,1)
-    show_MFCC(feature)
-    draw()
+
     return np.array(feature)
 
-def show_MFCC(mfcc):
-    """
-    Show the MFCC as an image.
-    """
-    imshow(mfcc.T, aspect="auto", interpolation="none")
-    title("MFCC features")
-    xlabel("Frame")
-    ylabel("Dimension")
 
-def show_MFCC_spectrum(mfcc):
-    """
-    Show the spectrum reconstructed from MFCC as an image.
-    """
-    imshow(dot(invD, mfcc.T), aspect="auto", interpolation="none", origin="lower")
-    title("MFCC spectrum")
-    xlabel("Frame")
-    ylabel("Band")
