@@ -129,7 +129,7 @@ def plot_audio_data(np_array):
     plt.show()
 
 
-def ansic_to_numpy(frames_, dec_):
+def ansic_to_numpy_old(frames_, dec_):
     scale_fun = lambda x: x / 1.0 if x < 32768 else (x - 65536) / 1.0  # uint16 to int16
     sound_np_array_ = np.array([])
 
@@ -148,6 +148,17 @@ def ansic_to_numpy(frames_, dec_):
                                 range(3, len(hex_audio_mono), 2)]  #little endian
             pcm_audio = np.array([scale_fun(x) for x in pcm_audio_uint16])
             sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
+    return sound_np_array_
+    
+
+def ansic_to_numpy(frames_):
+    sound_np_array_ = np.array([])
+
+    for fr in frames_:
+        hex_values_str = fr.__str__()
+        pcm_audio = np.fromstring(hex_values_str, dtype='int16')
+        pcm_audio = pcm_audio[2::2]
+        sound_np_array_ = np.append(sound_np_array_, pcm_audio, axis=1)
     return sound_np_array_
 
 
