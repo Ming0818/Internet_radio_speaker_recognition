@@ -115,6 +115,7 @@ def ansic_to_numpy(frames_):
     return sound_np_array_
 
 
+
 def add_to_database(url_, person_name_):
     gmm_models = {}
 
