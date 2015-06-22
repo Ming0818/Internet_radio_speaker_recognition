@@ -1,6 +1,22 @@
 __author__ = 'Radek W'
 
 
+"""
+#######################################################################################################
+If you use this project in scientific publication, we would appreciate citations to the following paper:
+@article{WeychanAsrPi,
+    author = {T. Marciniak and R. Weychan and A. Dabrowski},
+    title = {Implementation aspects of speaker recognition using {Python} language and {Raspberry Pi} platform},
+    journal = {IEEE SPA: Signal Processing Algorithms, Architectures, Arrangements, and Applications Conference Proceedings},
+    year = {2015},
+    pages = {95--98},
+    confidential = {n}
+}
+
+#######################################################################################################
+"""
+
+
 import urllib
 import ctypes
 import binascii
